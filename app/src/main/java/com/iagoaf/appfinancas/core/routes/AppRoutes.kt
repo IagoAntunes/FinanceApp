@@ -1,0 +1,8 @@
+package com.iagoaf.appfinancas.core.routes
+
+
+object AppRoutes {
+    const val LOGIN = "login"
+    const val REGISTER = "register"
+}
+

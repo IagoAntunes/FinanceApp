@@ -60,27 +60,60 @@ O projeto segue os princípios da **Clean Architecture**, organizando o código 
 
 ```
 src/
-├── core/
-│   ├── components/     # Componentes UI reutilizáveis
-│   ├── routes/         # Definição das rotas de navegação
+├── core/                    # Componentes compartilhados
+│   ├── components/          # Componentes UI reutilizáveis
+│   │   └── CTextField.kt    # Campo de texto customizado
+│   ├── routes/              # Definição das rotas de navegação
+│   │   └── AppRoutes.kt     # Constantes de rotas
 │   ├── ui/
-│   │   └── theme/      # Tema, cores e tipografia
-│   └── result/         # Classes para tratamento de resultados
+│   │   └── theme/           # Sistema de design
+│   │       ├── Color.kt     # Paleta de cores
+│   │       ├── Theme.kt     # Configuração do tema
+│   │       └── Type.kt      # Tipografia e estilos
+│   └── result/              # Classes para tratamento de resultados
+│       └── BaseResult.kt    # Wrapper para Success/Error
 │
-└── features/
-    └── auth/           # Módulo de autenticação
-        ├── domain/     # Regras de negócio e interfaces
-        ├── infra/      # Implementação dos repositórios
-        ├── presentation/ # ViewModels, States e UI
-        └── external/   # Integrações externas
+└── features/                # Módulos por funcionalidade
+    └── auth/                # Módulo de autenticação
+        ├── domain/          # Regras de negócio e interfaces
+        │   ├── model/       # Modelos de domínio
+        │   ├── repository/  # Interfaces de repositório
+        │   └── inject/      # Módulos de injeção
+        ├── infra/           # Implementação dos repositórios
+        │   ├── repository/  # Implementação dos repositórios
+        │   └── service/     # Interfaces de serviços
+        ├── presentation/    # ViewModels, States e UI
+        │   ├── screen/      # Telas do módulo
+        │   ├── viewmodel/   # ViewModels
+        │   ├── state/       # Estados da UI
+        │   └── listener/    # Listeners de eventos
+        └── external/        # Integrações externas
+            └── service/     # Implementações Firebase
 ```
 
 ### Camadas da Arquitetura
 
 - **Domain**: Contém as regras de negócio, casos de uso e interfaces
+  - Models, Repository interfaces, Dependency injection modules
 - **Infrastructure**: Implementa os repositórios e acesso a dados
+  - Repository implementations, Service interfaces
 - **Presentation**: Gerencia a UI, ViewModels e estados
+  - Screens, ViewModels, States, Listeners
 - **External**: Integra com APIs e serviços externos
+  - Firebase Authentication, Firestore integration
+
+### Fluxo de Dados
+
+```
+UI (Composables) → ViewModel → Repository → Service → Firebase
+                ←            ←            ←         ←
+```
+
+1. **UI** envia ações para o **ViewModel**
+2. **ViewModel** processa a lógica e chama o **Repository**
+3. **Repository** abstrai o acesso aos dados via **Service**
+4. **Service** implementa a comunicação com **Firebase**
+5. Resultados retornam através das mesmas camadas usando `BaseResult`
 
 ## 🚀 Configuração do Projeto
 
@@ -108,19 +141,50 @@ src/
 2. **Configurar Firebase**
    - Crie um projeto no [Firebase Console](https://console.firebase.google.com/)
    - Adicione seu app Android ao projeto
+   - Configure Authentication:
+     - Vá para Authentication > Sign-in method
+     - Habilite "Email/Password"
+   - Configure Firestore:
+     - Vá para Firestore Database
+     - Crie o banco de dados
+     - Configure as regras de segurança
    - Baixe o arquivo `google-services.json`
    - Coloque o arquivo na pasta `app/`
 
-3. **Compilar o projeto**
+3. **Configurar Firestore Rules**
+   ```javascript
+   rules_version = '2';
+   service cloud.firestore {
+     match /databases/{database}/documents {
+       match /users/{userId} {
+         allow read, write: if request.auth != null && request.auth.uid == userId;
+       }
+     }
+   }
+   ```
+
+4. **Compilar o projeto**
    ```bash
    ./gradlew build
    ```
 
-4. **Executar testes**
+5. **Executar testes**
    ```bash
    ./gradlew test
    ./gradlew connectedAndroidTest
    ```
+
+### Solução de Problemas Comuns
+
+#### Problemas de Build
+- **Erro de versão do Gradle**: Verifique se está usando Android Studio Flamingo ou superior
+- **Problemas com Firebase**: Certifique-se de que o arquivo `google-services.json` está na pasta `app/`
+- **Dependências não resolvidas**: Execute `./gradlew clean` e depois `./gradlew build`
+
+#### Problemas de Execução
+- **Crash no login**: Verifique se o Firebase Auth está configurado corretamente
+- **Erro de rede**: Certifique-se de que o dispositivo tem acesso à internet
+- **Problemas de UI**: Verifique se o tema e as cores estão sendo aplicados corretamente
 
 ## 📦 Dependências Principais
 
@@ -161,6 +225,13 @@ implementation("com.google.firebase:firebase-firestore-ktx")
 ### Tipografia
 - **Font Family**: Lato (Regular, Bold, Black)
 - **Escalas**: Title (XS, SM, MD, LG), Text (XS, SM), Button (SM, MD), Input
+- **Assets**: Fontes customizadas incluídas no projeto
+
+### Recursos Visuais
+- **Logo**: Versões light e dark do logo
+- **Ícones**: Conjunto de ícones vetoriais customizados
+- **Imagens**: Head logo para tela de login
+- **Fonte**: Família Lato completa (Regular, Bold, Black)
 
 ### Componentes Customizados
 - `CTextField` - Campo de texto personalizado com bordas dinâmicas
@@ -210,12 +281,30 @@ org.gradle.jvmargs=-Xmx2048m -Dfile.encoding=UTF-8
 ### 🔐 Autenticação
 - **LoginScreen**: Tela de login com validação de email/senha
 - **RegisterScreen**: Tela de registro com validação de campos
+- **Firebase Auth**: Integração completa com autenticação Firebase
+- **User Management**: Criação e gerenciamento de perfis de usuário no Firestore
+
+### 🔥 Integração Firebase
+- **Authentication**: Login/Registro com email e senha
+- **Firestore**: Armazenamento de dados de usuário
+- **Real-time Updates**: Sincronização em tempo real (preparado para futuras features)
+- **Offline Support**: Suporte offline nativo do Firebase (futuro)
 
 ### 🎨 Recursos de UI
 - Navegação fluida entre telas
 - Feedback visual para estados de loading
 - Validação de formulários em tempo real
 - Suporte a dark theme (futuro)
+
+### 🔄 Estado Atual do Projeto
+- ✅ **Base do projeto configurada** - Arquitetura limpa implementada
+- ✅ **Autenticação funcional** - Login e registro com Firebase
+- ✅ **UI/UX base** - Telas principais com design system
+- ✅ **Navegação** - Fluxo entre telas implementado
+- ✅ **Injeção de dependências** - Hilt configurado
+- ✅ **Tratamento de erros** - BaseResult para operações
+- 🔄 **Dashboard** - Em desenvolvimento
+- 🔄 **Funcionalidades financeiras** - Próximas features
 
 ## 🚀 Roadmap
 

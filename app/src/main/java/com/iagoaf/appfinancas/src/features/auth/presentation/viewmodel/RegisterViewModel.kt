@@ -23,7 +23,6 @@ class RegisterViewModel @Inject constructor(
     private val _listener = MutableStateFlow<RegisterListener>(RegisterListener.Idle)
     val listener: StateFlow<RegisterListener> = _listener.asStateFlow()
 
-
     fun register(
         name: String,
         email: String,

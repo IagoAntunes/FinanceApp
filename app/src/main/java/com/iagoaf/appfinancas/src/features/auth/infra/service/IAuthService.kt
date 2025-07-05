@@ -21,4 +21,9 @@ interface IAuthService {
         password: String,
     ): BaseResult<UserModel>
 
+    suspend fun signOut(): BaseResult<Unit>
+
+    suspend fun getUserInfo(userId: String): BaseResult<UserModel?>
+    suspend fun getCurrentUser(): BaseResult<UserModel>
+
 }

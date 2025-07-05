@@ -21,7 +21,8 @@ class AuthServiceImpl @Inject constructor(
             val authResult = auth.createUserWithEmailAndPassword(email, password).await()
             val user = UserModel(
                 uid = authResult.user?.uid ?: "",
-                email = authResult.user?.email ?: ""
+                email = authResult.user?.email ?: "",
+                name = name
             )
             return BaseResult.Success(user)
         } catch (e: Exception) {
@@ -43,6 +44,19 @@ class AuthServiceImpl @Inject constructor(
         return BaseResult.Success(Unit)
     }
 
+    override suspend fun getUserInfo(userId: String): BaseResult<UserModel?> {
+        return try {
+            val result = firestore.collection("users").document(userId).get().await()
+            val user = result.toObject(UserModel::class.java)
+            return BaseResult.Success(user)
+        } catch (e: Exception) {
+            BaseResult.Error(
+                message = e.message ?: "Unknown error"
+            )
+        }
+    }
+
+
     override suspend fun signIn(
         email: String,
         password: String
@@ -51,7 +65,36 @@ class AuthServiceImpl @Inject constructor(
             val result = auth.signInWithEmailAndPassword(email, password).await()
             val user = UserModel(
                 uid = result.user?.uid ?: "",
-                email = result.user?.email ?: ""
+                email = result.user?.email ?: "",
+                name = ""
+            )
+            return BaseResult.Success(user)
+        } catch (e: Exception) {
+            BaseResult.Error(
+                message = e.message ?: "Unknown error"
+            )
+        }
+    }
+
+    override suspend fun signOut(): BaseResult<Unit> {
+        return try {
+            auth.signOut()
+            return BaseResult.Success(Unit)
+        } catch (e: Exception) {
+            BaseResult.Error(
+                message = e.message ?: "Unknown error"
+            )
+        }
+    }
+
+
+    override suspend fun getCurrentUser(): BaseResult<UserModel> {
+        return try {
+            val firebaseUser = auth.currentUser
+            val user = UserModel(
+                uid = firebaseUser?.uid ?: "",
+                email = firebaseUser?.email ?: "",
+                name = ""
             )
             return BaseResult.Success(user)
         } catch (e: Exception) {

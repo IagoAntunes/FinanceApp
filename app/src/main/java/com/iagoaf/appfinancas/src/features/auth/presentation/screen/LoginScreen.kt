@@ -14,12 +14,14 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
@@ -38,18 +40,35 @@ import com.iagoaf.appfinancas.core.ui.theme.gray400
 import com.iagoaf.appfinancas.core.ui.theme.gray500
 import com.iagoaf.appfinancas.core.ui.theme.gray700
 import com.iagoaf.appfinancas.core.ui.theme.magenta
+import com.iagoaf.appfinancas.src.features.auth.presentation.listener.LoginListener
+import com.iagoaf.appfinancas.src.features.auth.presentation.state.LoginState
 
 @Composable
 fun LoginScreen(
     modifier: Modifier = Modifier,
     onLogin: (String, String) -> Unit,
     onNavigateToRegister: () -> Unit,
+    state: LoginState,
+    listener: LoginListener,
 ) {
 
     val obscurePassword = remember { mutableStateOf(true) }
 
     val emailValue = remember { mutableStateOf("") }
     val passwordValue = remember { mutableStateOf("") }
+
+
+    LaunchedEffect(listener) {
+        when (listener) {
+            is LoginListener.Idle -> {}
+            is LoginListener.OnLoginError -> {}
+            is LoginListener.OnLoginSuccess -> {
+                emailValue.value = ""
+                passwordValue.value = ""
+            }
+        }
+    }
+
 
     Scaffold(
         containerColor = gray100
@@ -81,6 +100,7 @@ fun LoginScreen(
             CTextField(
                 modifier = Modifier.fillMaxWidth(),
                 value = emailValue.value,
+                enabled = state !is LoginState.Loading,
                 onValueChange = { text ->
                     emailValue.value = text
                 },
@@ -95,6 +115,7 @@ fun LoginScreen(
             CTextField(
                 modifier = Modifier.fillMaxWidth(),
                 value = passwordValue.value,
+                enabled = state !is LoginState.Loading,
                 onValueChange = { text ->
                     passwordValue.value = text
                 },
@@ -129,6 +150,7 @@ fun LoginScreen(
             )
             OutlinedButton(
                 modifier = Modifier.fillMaxWidth(),
+                enabled = state !is LoginState.Loading,
                 onClick = {
                     onNavigateToRegister()
                 },
@@ -150,7 +172,13 @@ fun LoginScreen(
             }
             Spacer(modifier = Modifier.height(12.dp))
             Button(
-                onClick = {},
+                enabled = (state !is LoginState.Loading) && emailValue.value.isNotBlank() && passwordValue.value.isNotBlank(),
+                onClick = {
+                    onLogin(
+                        emailValue.value,
+                        passwordValue.value
+                    )
+                },
                 modifier = Modifier.fillMaxWidth(),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = magenta,
@@ -161,11 +189,15 @@ fun LoginScreen(
                     vertical = 16.dp
                 )
             ) {
-                Text(
-                    "Entrar",
-                    style = appTypography.buttonMd,
-                    color = gray100,
-                )
+                if (state is LoginState.Loading) {
+                    CircularProgressIndicator()
+                } else {
+                    Text(
+                        "Entrar",
+                        style = appTypography.buttonMd,
+                        color = gray100,
+                    )
+                }
             }
         }
     }
@@ -178,6 +210,8 @@ fun LoginScreen(
 private fun LoginScreenPreview() {
     LoginScreen(
         onNavigateToRegister = {},
-        onLogin = { _, _ -> }
+        onLogin = { _, _ -> },
+        state = LoginState.Initial,
+        listener = LoginListener.Idle
     )
 }

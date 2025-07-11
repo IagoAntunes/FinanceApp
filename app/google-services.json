@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "785363396686",
+    "project_id": "appfinancas-c5d90",
+    "storage_bucket": "appfinancas-c5d90.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:785363396686:android:f3caa3adc4dd08a7fb3b1f",
+        "android_client_info": {
+          "package_name": "com.iagoaf.appfinancas"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDu7GMfiOXLj5CKZX7PraCAhXS16fqjH5I"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

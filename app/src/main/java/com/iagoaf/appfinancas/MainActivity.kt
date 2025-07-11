@@ -100,7 +100,6 @@ fun AppNavHost(
                 }
             )
         }
-
         composable(AppRoutes.HOME) {
             val viewModel: HomeViewModel = hiltViewModel()
             val state = viewModel.state.collectAsState().value
@@ -109,6 +108,15 @@ fun AppNavHost(
                 state,
                 onLogout = {
                     authViewModel.logout()
+                },
+                onChangeMonth = { month ->
+                    viewModel.changeMonth(month)
+                },
+                onLeftChangeMonth = {
+                    viewModel.onLeftChangeMonth()
+                },
+                onRightChangeMonth = {
+                    viewModel.onRightChangeMonth()
                 }
             )
         }

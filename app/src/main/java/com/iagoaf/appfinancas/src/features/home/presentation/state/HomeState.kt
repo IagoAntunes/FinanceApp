@@ -13,8 +13,8 @@ sealed class HomeState(open val user: UserModel?) {
 
     data class Success(
         override val user: UserModel?,
-        val selectedMonth: Month = Month.JANUARY,
-        val currentBudget: BudgetModel,
+        var selectedMonth: Month = Month.JANUARY,
+        var currentBudget: BudgetModel,
         val budgets: List<BudgetModel>,
     ) :
         HomeState(user)

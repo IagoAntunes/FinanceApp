@@ -21,6 +21,8 @@ import com.iagoaf.appfinancas.src.features.auth.presentation.viewmodel.LoginView
 import com.iagoaf.appfinancas.src.features.auth.presentation.viewmodel.RegisterViewModel
 import com.iagoaf.appfinancas.src.features.home.presentation.HomeScreen
 import com.iagoaf.appfinancas.src.features.home.presentation.viewModel.HomeViewModel
+import com.iagoaf.appfinancas.src.features.monthlyBudget.presentation.MonthlyBudgetScreen
+import com.iagoaf.appfinancas.src.features.monthlyBudget.presentation.viewmodel.MonthlyBudgetViewModel
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
@@ -117,8 +119,19 @@ fun AppNavHost(
                 },
                 onRightChangeMonth = {
                     viewModel.onRightChangeMonth()
+                },
+                onSaveRelease = { release ->
+                    viewModel.addRelease(release)
+                },
+                onClickNewBudget = {
+
                 }
             )
+        }
+        composable(AppRoutes.MONTHLY_BUDGET) {
+            val viewModel: MonthlyBudgetViewModel = hiltViewModel()
+
+            MonthlyBudgetScreen()
         }
     }
 }

@@ -22,13 +22,20 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FabPosition
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -54,8 +61,10 @@ import com.iagoaf.appfinancas.core.utils.Month
 import com.iagoaf.appfinancas.src.features.auth.domain.model.UserModel
 import com.iagoaf.appfinancas.src.features.home.domain.model.BudgetModel
 import com.iagoaf.appfinancas.src.features.home.domain.model.ReleaseModel
+import com.iagoaf.appfinancas.src.features.home.presentation.components.NewReleaseBottomSheet
 import com.iagoaf.appfinancas.src.features.home.presentation.state.HomeState
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
     state: HomeState,
@@ -63,25 +72,49 @@ fun HomeScreen(
     onChangeMonth: (Month) -> Unit,
     onLeftChangeMonth: () -> Unit,
     onRightChangeMonth: () -> Unit,
+    onSaveRelease: (ReleaseModel) -> Unit,
+    onClickNewBudget: () -> Unit,
 ) {
+    val sheetState = rememberModalBottomSheetState(
+        skipPartiallyExpanded = true
+    )
+    val scope = rememberCoroutineScope()
+    var showBottomSheet by remember { mutableStateOf(false) }
+
     Scaffold(
         containerColor = gray200,
         floatingActionButton = {
-            FloatingActionButton(
-                onClick = {},
-                containerColor = gray700,
-                modifier = Modifier.clip(CircleShape)
-            ) {
-                Image(
-                    painter = painterResource(R.drawable.ic_add),
-                    contentDescription = "Add release",
-                    colorFilter = ColorFilter.tint(gray100),
-                    modifier = Modifier.size(20.dp)
-                )
-            }
+            if (state is HomeState.Success && state.currentBudget.limit.isNotEmpty())
+                FloatingActionButton(
+                    onClick = {
+                        showBottomSheet = true
+                    },
+                    containerColor = gray700,
+                    modifier = Modifier.clip(CircleShape)
+                ) {
+                    Image(
+                        painter = painterResource(R.drawable.ic_add),
+                        contentDescription = "Add release",
+                        colorFilter = ColorFilter.tint(gray100),
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
         },
         floatingActionButtonPosition = FabPosition.Center
     ) { innerPadding ->
+        if (showBottomSheet) {
+            NewReleaseBottomSheet(
+                sheetState = sheetState,
+                onDismiss = {
+                    showBottomSheet = false
+                },
+                scope = scope,
+                onSaveRelease = { release ->
+                    showBottomSheet = false
+                    onSaveRelease(release)
+                }
+            )
+        }
         Column(
             modifier = Modifier
                 .padding(innerPadding)
@@ -249,7 +282,7 @@ fun HomeScreen(
                                     OutlinedButton(
                                         modifier = Modifier.fillMaxWidth(),
                                         shape = RoundedCornerShape(6.dp),
-                                        onClick = {},
+                                        onClick = onClickNewBudget,
                                         colors = ButtonDefaults.outlinedButtonColors(
                                             contentColor = magenta
                                         ),
@@ -515,7 +548,9 @@ private fun HomeScreenPreview() {
         },
         onChangeMonth = {},
         onLeftChangeMonth = {},
-        onRightChangeMonth = {}
+        onRightChangeMonth = {},
+        onSaveRelease = {},
+        onClickNewBudget = {}
     )
 }
 
@@ -538,11 +573,11 @@ private fun HomeScreenEmptyReleasesPreview() {
                 releases = emptyList()
             ),
         ),
-        onLogout = {
-
-        },
+        onLogout = {},
         onChangeMonth = {},
         onLeftChangeMonth = {},
-        onRightChangeMonth = {}
+        onRightChangeMonth = {},
+        onSaveRelease = {},
+        onClickNewBudget = {}
     )
 }

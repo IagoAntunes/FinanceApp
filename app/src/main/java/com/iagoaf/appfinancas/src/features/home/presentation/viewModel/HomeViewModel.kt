@@ -6,6 +6,8 @@ import com.iagoaf.appfinancas.core.utils.Month
 import com.iagoaf.appfinancas.services.database.keyValue.PreferencesManager
 import com.iagoaf.appfinancas.src.features.auth.domain.model.UserModel
 import com.iagoaf.appfinancas.src.features.auth.domain.repository.IAuthRepository
+import com.iagoaf.appfinancas.src.features.home.domain.model.BudgetModel
+import com.iagoaf.appfinancas.src.features.home.domain.model.ReleaseModel
 import com.iagoaf.appfinancas.src.features.home.domain.repository.IBudgetRepository
 import com.iagoaf.appfinancas.src.features.home.presentation.state.HomeState
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -15,6 +17,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
+import java.util.UUID
 import javax.inject.Inject
 
 @HiltViewModel
@@ -41,7 +44,7 @@ class HomeViewModel @Inject constructor(
                 month.ordinal == actualMonth.ordinal
             }
             result.onSuccess { items ->
-                val currentBudget = items.items.first { budget ->
+                val currentBudget = items.items.firstOrNull { budget ->
                     val budgetMonth = LocalDate.parse(
                         budget.date,
                         DateTimeFormatter.ofPattern("dd/MM/yyyy")
@@ -52,7 +55,7 @@ class HomeViewModel @Inject constructor(
                     user = user,
                     selectedMonth = selectedMonth,
                     budgets = items.items,
-                    currentBudget = currentBudget,
+                    currentBudget = currentBudget ?: BudgetModel(),
                 )
             }
             result.onError {
@@ -78,7 +81,18 @@ class HomeViewModel @Inject constructor(
     }
 
     fun changeMonth(month: Month) {
-        _state.value = _state.value.copy(month = month)
+        _state.value = _state.value
+            .copy(month = month)
+        if (_state.value is HomeState.Success) {
+            val selectedBudget = (_state.value as HomeState.Success).budgets.firstOrNull { budget ->
+                val budgetMonth = LocalDate.parse(
+                    budget.date,
+                    DateTimeFormatter.ofPattern("dd/MM/yyyy")
+                ).month
+                budgetMonth.ordinal == (_state.value as HomeState.Success).selectedMonth.ordinal
+            }
+            (_state.value as HomeState.Success).currentBudget = selectedBudget ?: BudgetModel()
+        }
     }
 
     fun onLeftChangeMonth() {
@@ -93,6 +107,11 @@ class HomeViewModel @Inject constructor(
         val newMonth = Month.entries[(currentMonth.ordinal + 1) % Month.entries.size]
         changeMonth(newMonth)
 
+    }
+
+    fun addRelease(release: ReleaseModel) {
+        val id = UUID.randomUUID().toString()
+        release.id = id
     }
 
 

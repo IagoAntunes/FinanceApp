@@ -1,5 +1,7 @@
 package com.iagoaf.appfinancas.src.features.home.presentation.viewModel
 
+import android.util.Log
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.iagoaf.appfinancas.core.utils.Month
@@ -11,6 +13,7 @@ import com.iagoaf.appfinancas.src.features.home.domain.model.ReleaseModel
 import com.iagoaf.appfinancas.src.features.home.domain.repository.IBudgetRepository
 import com.iagoaf.appfinancas.src.features.home.presentation.state.HomeState
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -24,11 +27,14 @@ import javax.inject.Inject
 class HomeViewModel @Inject constructor(
     val preferencesManager: PreferencesManager,
     val authRepository: IAuthRepository,
-    val budgetRepository: IBudgetRepository
+    val budgetRepository: IBudgetRepository,
+    val savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
     private val _state = MutableStateFlow<HomeState>(HomeState.Idle(null))
     val state: StateFlow<HomeState> = _state.asStateFlow()
+
+    private var _user: UserModel? = null
 
     init {
         getUserData()
@@ -36,9 +42,9 @@ class HomeViewModel @Inject constructor(
     }
 
     fun getBudgets() {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             val result = budgetRepository.getBudgets()
-            val user = (_state.value as? HomeState.Idle)?.user
+            val user = _user
             val actualMonth = LocalDate.now().month
             val selectedMonth = Month.list.first { month ->
                 month.ordinal == actualMonth.ordinal
@@ -58,8 +64,8 @@ class HomeViewModel @Inject constructor(
                     currentBudget = currentBudget ?: BudgetModel(),
                 )
             }
-            result.onError {
-                //
+            result.onError { error ->
+                Log.e("ERRO AQUI", error ?: "Unknown error")
             }
         }
     }
@@ -69,13 +75,14 @@ class HomeViewModel @Inject constructor(
         val userEmail = preferencesManager.get("user_email")
         val userName = preferencesManager.get("user_name") ?: ""
         val userId = preferencesManager.get("user_uid") ?: ""
+        _user = UserModel(
+            email = userEmail ?: "",
+            uid = userId,
+            name = userName,
+        )
         if (userEmail != null) {
             _state.value = HomeState.Idle(
-                user = UserModel(
-                    email = userEmail,
-                    uid = userId,
-                    name = userName,
-                ),
+                user = _user
             )
         }
     }

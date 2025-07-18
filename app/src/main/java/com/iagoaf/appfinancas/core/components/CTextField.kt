@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
@@ -45,7 +46,8 @@ fun CTextField(
     visualTransformation: VisualTransformation = VisualTransformation.None,
     enabled: Boolean = true,
     readOnly: Boolean = false,
-    onClick: (() -> Unit)? = null, // Add this parameter
+    onClick: (() -> Unit)? = null,
+    keyboardOptions: KeyboardOptions = KeyboardOptions.Default
 ) {
     var isFocused by remember { mutableStateOf(false) }
 
@@ -71,6 +73,7 @@ fun CTextField(
             placeholder = placeHolder,
             shape = RoundedCornerShape(8.dp),
             visualTransformation = visualTransformation,
+            keyboardOptions = keyboardOptions,
             colors = TextFieldDefaults.colors(
                 unfocusedContainerColor = gray200,
                 focusedTextColor = gray700,
@@ -132,5 +135,7 @@ fun CTextFieldContainer(
 @Preview
 @Composable
 private fun CTextFieldPreview() {
-    CTextField()
+    CTextField(
+        keyboardOptions = KeyboardOptions.Default
+    )
 }

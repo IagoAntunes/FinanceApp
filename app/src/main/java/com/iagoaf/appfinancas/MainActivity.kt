@@ -6,11 +6,14 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.iagoaf.appfinancas.core.routes.AppRoutes
 import com.iagoaf.appfinancas.core.ui.theme.AppFinancasTheme
 import com.iagoaf.appfinancas.src.features.auth.presentation.screen.LoginScreen
@@ -20,6 +23,7 @@ import com.iagoaf.appfinancas.src.features.auth.presentation.viewmodel.AuthViewM
 import com.iagoaf.appfinancas.src.features.auth.presentation.viewmodel.LoginViewModel
 import com.iagoaf.appfinancas.src.features.auth.presentation.viewmodel.RegisterViewModel
 import com.iagoaf.appfinancas.src.features.home.presentation.HomeScreen
+import com.iagoaf.appfinancas.src.features.home.presentation.state.HomeState
 import com.iagoaf.appfinancas.src.features.home.presentation.viewModel.HomeViewModel
 import com.iagoaf.appfinancas.src.features.monthlyBudget.presentation.MonthlyBudgetScreen
 import com.iagoaf.appfinancas.src.features.monthlyBudget.presentation.viewmodel.MonthlyBudgetViewModel
@@ -105,7 +109,10 @@ fun AppNavHost(
         composable(AppRoutes.HOME) {
             val viewModel: HomeViewModel = hiltViewModel()
             val state = viewModel.state.collectAsState().value
-
+            val budgetCreated = navController.currentBackStackEntry
+                ?.savedStateHandle
+                ?.getLiveData<Boolean>("budget_created")
+                ?.observeAsState(initial = false)
             HomeScreen(
                 state,
                 onLogout = {
@@ -124,14 +131,47 @@ fun AppNavHost(
                     viewModel.addRelease(release)
                 },
                 onClickNewBudget = {
+                    val month = (state as HomeState.Success).selectedMonth
+                    navController.navigate("${AppRoutes.MONTHLY_BUDGET}/${month.ordinal + 1}")
+                },
+                getBudgets = {
+                    viewModel.getBudgets()
+                },
+                budgetCreated = budgetCreated,
+                onCleanKeyBudgetCreated = {
 
                 }
             )
         }
-        composable(AppRoutes.MONTHLY_BUDGET) {
+        composable(
+            route = "${AppRoutes.MONTHLY_BUDGET}/{month}",
+            arguments = listOf(navArgument("month") { type = NavType.StringType })
+        ) { backStackEntry ->
             val viewModel: MonthlyBudgetViewModel = hiltViewModel()
 
-            MonthlyBudgetScreen()
+            val state = viewModel.state.collectAsState().value
+            val listener = viewModel.listener.collectAsState().value
+
+            MonthlyBudgetScreen(
+                state = state,
+                listener = listener,
+                onBack = {
+                    navController.popBackStack()
+                },
+                onAddBudget = { limitBudget ->
+                    viewModel.createBudget(limitBudget)
+
+                },
+                onDeleteBudget = { budgetId ->
+
+                },
+                onBackBudgetCreated = {
+                    navController.previousBackStackEntry
+                        ?.savedStateHandle
+                        ?.set("budget_created", true)
+                    navController.popBackStack()
+                }
+            )
         }
     }
 }

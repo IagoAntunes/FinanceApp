@@ -31,6 +31,8 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -61,6 +63,9 @@ import com.iagoaf.appfinancas.core.utils.Month
 import com.iagoaf.appfinancas.src.features.auth.domain.model.UserModel
 import com.iagoaf.appfinancas.src.features.home.domain.model.BudgetModel
 import com.iagoaf.appfinancas.src.features.home.domain.model.ReleaseModel
+import com.iagoaf.appfinancas.src.features.home.domain.model.getAvailableBudget
+import com.iagoaf.appfinancas.src.features.home.domain.model.getUsedBudget
+import com.iagoaf.appfinancas.src.features.home.domain.model.toCurrencyUSD
 import com.iagoaf.appfinancas.src.features.home.presentation.components.NewReleaseBottomSheet
 import com.iagoaf.appfinancas.src.features.home.presentation.state.HomeState
 
@@ -74,12 +79,22 @@ fun HomeScreen(
     onRightChangeMonth: () -> Unit,
     onSaveRelease: (ReleaseModel) -> Unit,
     onClickNewBudget: () -> Unit,
+    getBudgets: () -> Unit,
+    budgetCreated: State<Boolean>?,
+    onCleanKeyBudgetCreated: () -> Unit,
 ) {
     val sheetState = rememberModalBottomSheetState(
         skipPartiallyExpanded = true
     )
     val scope = rememberCoroutineScope()
     var showBottomSheet by remember { mutableStateOf(false) }
+
+    LaunchedEffect(budgetCreated?.value) {
+        if (budgetCreated?.value == true) {
+            getBudgets()
+            onCleanKeyBudgetCreated()
+        }
+    }
 
     Scaffold(
         containerColor = gray200,
@@ -299,7 +314,9 @@ fun HomeScreen(
                                     }
                                 } else {
                                     Text(
-                                        "R\$ 1.000,00",
+                                        "\$ ${
+                                            state.currentBudget.getAvailableBudget().toCurrencyUSD()
+                                        }",
                                         style = appTypography.titleLg,
                                         color = gray100
                                     )
@@ -317,7 +334,10 @@ fun HomeScreen(
                                         )
                                         if (state.currentBudget.limit.isNotEmpty())
                                             Text(
-                                                "R\$ ${state.currentBudget.budgetUsed}",
+                                                "\$ ${
+                                                    state.currentBudget.getUsedBudget()
+                                                        .toCurrencyUSD()
+                                                }",
                                                 style = appTypography.textSm,
                                                 color = gray100
                                             )
@@ -330,7 +350,7 @@ fun HomeScreen(
                                         )
                                         if (state.currentBudget.limit.isNotEmpty()) {
                                             Text(
-                                                "R\$ ${state.currentBudget.limit}",
+                                                "\$ ${state.currentBudget.limit.toCurrencyUSD()}",
                                                 style = appTypography.textSm,
                                                 color = gray100
                                             )
@@ -550,7 +570,10 @@ private fun HomeScreenPreview() {
         onLeftChangeMonth = {},
         onRightChangeMonth = {},
         onSaveRelease = {},
-        onClickNewBudget = {}
+        onClickNewBudget = {},
+        getBudgets = {},
+        onCleanKeyBudgetCreated = {},
+        budgetCreated = remember { mutableStateOf(false) }
     )
 }
 
@@ -578,6 +601,9 @@ private fun HomeScreenEmptyReleasesPreview() {
         onLeftChangeMonth = {},
         onRightChangeMonth = {},
         onSaveRelease = {},
-        onClickNewBudget = {}
+        onClickNewBudget = {},
+        getBudgets = {},
+        onCleanKeyBudgetCreated = {},
+        budgetCreated = remember { mutableStateOf(false) }
     )
 }

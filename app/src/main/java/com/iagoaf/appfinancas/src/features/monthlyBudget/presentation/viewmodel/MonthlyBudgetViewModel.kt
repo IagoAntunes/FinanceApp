@@ -39,15 +39,37 @@ class MonthlyBudgetViewModel @Inject constructor(
         year = currentDate.year
         val parsedMonth = monthParam?.toIntOrNull() ?: currentDate.monthValue
         date = LocalDate.of(year, parsedMonth, 1)
-        formattedDate = date.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))
-        monthNumber = formattedDate.split("/").getOrNull(1)?.toIntOrNull()?.minus(1)!!
+        formattedDate = date.format(DateTimeFormatter.ofPattern("MM/dd/yyyy"))
+        monthNumber = formattedDate.split("/").getOrNull(0)?.toIntOrNull()?.minus(1)!!
         getBudgets()
     }
+
+
+    fun deleteBudget(budget: BudgetModel) {
+        val currentState = state.value as? MonthlyBudgetState.Success ?: return
+        val budgets = currentState.budgets.toMutableList()
+        val index = budgets.indexOfFirst { it.date == budget.date }
+
+        if (index != -1) {
+            budgets.removeAt(index)
+
+            viewModelScope.launch {
+                val result = budgetRepository.deleteBudget(budgets)
+                result.onSuccess {
+                    _listener.value = MonthlyBudgetListener.BudgetDeleted
+                    getBudgets()
+                }
+                result.onError {
+                }
+            }
+        }
+    }
+
 
     fun createBudget(limit: String) {
         viewModelScope.launch {
             val date = LocalDate.of(year, monthNumber + 1, 1).format(
-                DateTimeFormatter.ofPattern("dd/MM/yyyy")
+                DateTimeFormatter.ofPattern("MM/dd/yyyy")
             )
             val budget = BudgetModel(
                 limit = limit,
@@ -58,7 +80,6 @@ class MonthlyBudgetViewModel @Inject constructor(
                 _listener.value = MonthlyBudgetListener.BudgetCreated
             }
             result.onError {
-                //
             }
         }
     }
@@ -72,7 +93,7 @@ class MonthlyBudgetViewModel @Inject constructor(
                     Month.list.firstOrNull { it.od == num }?.name
                 } ?: "UNKNOWN"
 
-                val formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
+                val formatter = DateTimeFormatter.ofPattern("MM/dd/yyyy")
                 val sortedBudgets = budgetResponse.items.sortedBy { budget ->
                     try {
                         LocalDate.parse(budget.date, formatter)

@@ -1,10 +1,9 @@
 package com.iagoaf.appfinancas.src.features.home.external.service
 
-import android.util.Log
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.iagoaf.appfinancas.core.result.BaseResult
-import com.iagoaf.appfinancas.core.utils.FirebaseCollectionsKeys
+import com.iagoaf.appfinancas.core.utils.FirebaseKeys
 import com.iagoaf.appfinancas.src.features.home.domain.model.BudgetModel
 import com.iagoaf.appfinancas.src.features.home.domain.model.BudgetResponse
 import com.iagoaf.appfinancas.src.features.home.infra.service.IBudgetService
@@ -17,11 +16,8 @@ class BudgetServiceImpl @Inject constructor() : IBudgetService {
 
     override suspend fun getBudgets(userId: String): BaseResult<BudgetResponse> {
         return try {
-            Log.d("USER ID", userId)
             val documentSnapshot =
-                firestore.collection(FirebaseCollectionsKeys.budgets).document(userId).get().await()
-            Log.d("FIREBASE_DATA", documentSnapshot.data.toString())
-
+                firestore.collection(FirebaseKeys.budgets).document(userId).get().await()
             val budgetResponse = documentSnapshot.toObject(BudgetResponse::class.java)
 
             if (budgetResponse != null) {
@@ -30,7 +26,6 @@ class BudgetServiceImpl @Inject constructor() : IBudgetService {
                 BaseResult.Error("Failed to parse document")
             }
         } catch (e: Exception) {
-            Log.e("TESTE", e.message.toString())
             BaseResult.Error("Failed to parse document")
         }
     }
@@ -38,13 +33,52 @@ class BudgetServiceImpl @Inject constructor() : IBudgetService {
     override suspend fun createBudget(budget: BudgetModel, userId: String): BaseResult<Unit> {
         try {
             val docRef =
-                firestore.collection(FirebaseCollectionsKeys.budgets).document(userId)
+                firestore.collection(FirebaseKeys.budgets).document(userId)
 
-            docRef.update("items", FieldValue.arrayUnion(budget)).await()
+            docRef.update(FirebaseKeys.items, FieldValue.arrayUnion(budget)).await()
 
             return BaseResult.Success(Unit)
         } catch (e: Exception) {
             return BaseResult.Error("Failed to create budget: ${e.message}")
+        }
+    }
+
+    override suspend fun createRelease(
+        budgets: List<BudgetModel>,
+        userId: String
+    ): BaseResult<Unit> {
+        try {
+            val docRef = firestore.collection(FirebaseKeys.budgets).document(userId)
+            docRef.update(FirebaseKeys.items, budgets).await()
+            return BaseResult.Success(Unit)
+        } catch (e: Exception) {
+            return BaseResult.Error("Failed to create release: ${e.message}")
+        }
+    }
+
+    override suspend fun deleteRelease(
+        budgets: List<BudgetModel>,
+        userId: String
+    ): BaseResult<Unit> {
+        try {
+            val docRef = firestore.collection(FirebaseKeys.budgets).document(userId)
+            docRef.update(FirebaseKeys.items, budgets).await()
+            return BaseResult.Success(Unit)
+        } catch (e: Exception) {
+            return BaseResult.Error("Failed to create release: ${e.message}")
+        }
+    }
+
+    override suspend fun deleteBudget(
+        budgets: List<BudgetModel>,
+        userId: String
+    ): BaseResult<Unit> {
+        try {
+            val docRef = firestore.collection(FirebaseKeys.budgets).document(userId)
+            docRef.update(FirebaseKeys.items, budgets).await()
+            return BaseResult.Success(Unit)
+        } catch (e: Exception) {
+            return BaseResult.Error("Failed to create release: ${e.message}")
         }
     }
 }

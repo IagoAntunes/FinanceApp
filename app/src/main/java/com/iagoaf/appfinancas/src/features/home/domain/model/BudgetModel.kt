@@ -1,5 +1,6 @@
 package com.iagoaf.appfinancas.src.features.home.domain.model
 
+import android.util.Log
 import java.math.BigDecimal
 import java.text.DecimalFormat
 import java.text.DecimalFormatSymbols
@@ -30,14 +31,21 @@ fun String.toCurrencyUSD(): String {
 
 fun BudgetModel.getAvailableBudget(): String {
     return try {
-        val used = BigDecimal(this.budgetUsed.replace(",", "."))
-        val lim = BigDecimal(this.limit.replace(",", "."))
+        val limit = BigDecimal(this.limit.replace(",", "."))
+        val totalDeposits = releases.filter { it.positive }
+            .fold(BigDecimal.ZERO) { acc, release ->
+                acc + BigDecimal(release.value.replace(",", "."))
+            }
+        val totalExpenses = releases.filter { !it.positive }
+            .fold(BigDecimal.ZERO) { acc, release ->
+                acc + BigDecimal(release.value.replace(",", "."))
+            }
 
-        val result = lim - used
+        val available = limit + totalDeposits - totalExpenses
 
         val symbols = DecimalFormatSymbols(Locale.US)
         val decimalFormat = DecimalFormat("#,##0.00", symbols)
-        decimalFormat.format(result)
+        decimalFormat.format(available)
     } catch (e: Exception) {
         "0.00"
     }
@@ -45,23 +53,31 @@ fun BudgetModel.getAvailableBudget(): String {
 
 fun BudgetModel.getUsedBudget(): String {
     return try {
-        val total = releases.fold(BigDecimal.ZERO) { acc, release ->
-            val value = BigDecimal(release.value.replace(",", "."))
-            if (release.isPositive) acc + value else acc - value
-        }
+        val totalDeposits = releases.filter { it.positive }
+            .fold(BigDecimal.ZERO) { acc, release ->
+                acc + BigDecimal(release.value.replace(",", "."))
+            }
+        val totalExpenses = releases.filter { !it.positive }
+            .fold(BigDecimal.ZERO) { acc, release ->
+                acc + BigDecimal(release.value.replace(",", "."))
+            }
+
+        val used = if (totalExpenses > totalDeposits) totalExpenses - totalDeposits else BigDecimal.ZERO
 
         val symbols = DecimalFormatSymbols(Locale.US)
         val decimalFormat = DecimalFormat("#,##0.00", symbols)
-        decimalFormat.format(total)
+        decimalFormat.format(used)
     } catch (e: Exception) {
         "0.00"
     }
 }
 
 
+
+
 fun BudgetModel.isTwoMonthsAhead(): Boolean {
     return try {
-        val formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
+        val formatter = DateTimeFormatter.ofPattern("MM/dd/yyyy")
         val budgetDate = LocalDate.parse(this.date, formatter)
         val currentDate = LocalDate.now()
 

@@ -24,6 +24,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.SheetState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -41,6 +42,7 @@ import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.DialogProperties
 import com.iagoaf.appfinancas.R
 import com.iagoaf.appfinancas.core.components.CTextField
 import com.iagoaf.appfinancas.core.components.CTextFieldContainer
@@ -58,6 +60,9 @@ import com.iagoaf.appfinancas.src.features.home.domain.model.ReleaseModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
+import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneId
 import java.util.Date
 import java.util.Locale
 import java.util.TimeZone
@@ -69,6 +74,7 @@ fun NewReleaseBottomSheet(
     scope: CoroutineScope,
     onDismiss: () -> Unit,
     onSaveRelease: (ReleaseModel) -> Unit,
+    monthBudget: Int
 ) {
     ModalBottomSheet(
         onDismissRequest = {
@@ -84,6 +90,7 @@ fun NewReleaseBottomSheet(
             scope,
             onDismiss,
             onSaveRelease,
+            monthBudget = monthBudget
         )
     }
 }
@@ -95,9 +102,10 @@ fun ContentModal(
     scope: CoroutineScope,
     onDismiss: () -> Unit,
     onSaveRelease: (ReleaseModel) -> Unit,
+    monthBudget: Int,
 ) {
     fun convertMillisToDate(millis: Long): String {
-        val formatter = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
+        val formatter = SimpleDateFormat("MM/dd/yyyy", Locale.getDefault())
         formatter.timeZone = TimeZone.getTimeZone("UTC")
         return formatter.format(Date(millis))
     }
@@ -105,14 +113,12 @@ fun ContentModal(
     var showDatePicker by remember { mutableStateOf(false) }
 
     val title = remember { mutableStateOf("") }
-    val category = remember { mutableStateOf("") }
     val value = remember { mutableStateOf("") }
     val date = remember { mutableStateOf("") }
     val isPositive = remember { mutableStateOf<Boolean?>(null) }
 
     fun isFormValid(): Boolean {
         return title.value.isNotBlank() &&
-                category.value.isNotBlank() &&
                 value.value.isNotBlank() &&
                 date.value.isNotBlank() &&
                 isPositive.value != null
@@ -124,7 +130,8 @@ fun ContentModal(
                 date.value = millis?.let { convertMillisToDate(it) } ?: ""
                 showDatePicker = false
             },
-            onDismiss = { showDatePicker = false }
+            onDismiss = { showDatePicker = false },
+            month = monthBudget
         )
     }
 
@@ -142,7 +149,7 @@ fun ContentModal(
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Text(
-                "NOVO LANÇAMENTO",
+                "NEW RELEASE",
                 style = appTypography.titleXs,
                 color = gray700
             )
@@ -164,36 +171,13 @@ fun ContentModal(
             value = title.value,
             placeHolder = {
                 Text(
-                    "Titulo da transação",
+                    "Transaction title",
                     style = appTypography.input,
                     color = gray400
                 )
             },
             onValueChange = { text ->
                 title.value = text
-            },
-            modifier = Modifier.fillMaxWidth(),
-        )
-        Spacer(modifier = Modifier.height(12.dp))
-        CTextField(
-            value = category.value,
-            placeHolder = {
-                Text(
-                    "Categoria",
-                    style = appTypography.input,
-                    color = gray400
-                )
-            },
-            prefix = {
-                Image(
-                    painter = painterResource(R.drawable.ic_tag),
-                    contentDescription = "Category",
-                    colorFilter = ColorFilter.tint(gray600),
-                    modifier = Modifier.size(20.dp)
-                )
-            },
-            onValueChange = { text ->
-                category.value = text
             },
             modifier = Modifier.fillMaxWidth(),
         )
@@ -206,7 +190,7 @@ fun ContentModal(
                 value = value.value,
                 prefix = {
                     Text(
-                        "R\$",
+                        "\$",
                         style = appTypography.input,
                         color = gray600,
                     )
@@ -267,7 +251,7 @@ fun ContentModal(
                     horizontalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     Text(
-                        "Entrada",
+                        "Deposit",
                         style = appTypography.buttonSm,
                         color = if (isPositive.value == true) green else gray700,
                     )
@@ -310,7 +294,7 @@ fun ContentModal(
                     horizontalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     Text(
-                        "Saída",
+                        "Expense",
                         style = appTypography.buttonSm,
                         color = if (isPositive.value == false) red else gray700,
                     )
@@ -333,9 +317,8 @@ fun ContentModal(
         Button(
             onClick = {
                 val release = ReleaseModel(
-                    category = category.value,
                     date = date.value,
-                    isPositive = isPositive.value ?: true,
+                    positive = isPositive.value != false,
                     title = title.value,
                     value = value.value.toString(),
                 )
@@ -352,7 +335,7 @@ fun ContentModal(
             )
         ) {
             Text(
-                "Salvar",
+                "Save",
                 style = appTypography.buttonMd
             )
         }
@@ -363,9 +346,27 @@ fun ContentModal(
 @Composable
 fun DatePickerModal(
     onDateSelected: (Long?) -> Unit,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    month: Int = 0,
 ) {
-    val datePickerState = rememberDatePickerState()
+    val currentYear = LocalDate.now().year
+    val initialDate = LocalDate.of(currentYear, month, 1)
+
+    val datePickerState = rememberDatePickerState(
+        selectableDates = object : SelectableDates {
+            override fun isSelectableDate(utcTimeMillis: Long): Boolean {
+                val date = Instant.ofEpochMilli(utcTimeMillis)
+                    .atZone(ZoneId.systemDefault())
+                    .toLocalDate()
+
+                return date.monthValue == month
+            }
+        },
+        initialSelectedDateMillis = initialDate
+            .atStartOfDay(ZoneId.systemDefault())
+            .toInstant()
+            .toEpochMilli()
+    )
 
     DatePickerDialog(
         onDismissRequest = onDismiss,
@@ -381,7 +382,8 @@ fun DatePickerModal(
             TextButton(onClick = onDismiss) {
                 Text("Cancel")
             }
-        }
+        },
+        properties = DialogProperties()
     ) {
         DatePicker(state = datePickerState)
     }
@@ -402,7 +404,8 @@ private fun NewReleaseBottomSheetPreview() {
             onDismiss = { /*TODO*/ },
             onSaveRelease = {
 
-            }
+            },
+            monthBudget = 4,
         )
     }
 }

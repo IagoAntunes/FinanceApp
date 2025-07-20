@@ -67,27 +67,52 @@ import com.iagoaf.appfinancas.src.features.home.domain.model.getAvailableBudget
 import com.iagoaf.appfinancas.src.features.home.domain.model.getUsedBudget
 import com.iagoaf.appfinancas.src.features.home.domain.model.toCurrencyUSD
 import com.iagoaf.appfinancas.src.features.home.presentation.components.NewReleaseBottomSheet
+import com.iagoaf.appfinancas.src.features.home.presentation.listener.HomeListener
 import com.iagoaf.appfinancas.src.features.home.presentation.state.HomeState
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
     state: HomeState,
+    listener: HomeListener,
     onLogout: () -> Unit,
+    onClickLogout: () -> Unit,
     onChangeMonth: (Month) -> Unit,
     onLeftChangeMonth: () -> Unit,
     onRightChangeMonth: () -> Unit,
-    onSaveRelease: (ReleaseModel) -> Unit,
+    onSaveRelease: (ReleaseModel, BudgetModel) -> Unit,
+    onDeleteRelease: (ReleaseModel) -> Unit,
     onClickNewBudget: () -> Unit,
     getBudgets: () -> Unit,
     budgetCreated: State<Boolean>?,
     onCleanKeyBudgetCreated: () -> Unit,
+    resetListener: () -> Unit,
 ) {
     val sheetState = rememberModalBottomSheetState(
         skipPartiallyExpanded = true
     )
     val scope = rememberCoroutineScope()
     var showBottomSheet by remember { mutableStateOf(false) }
+
+    LaunchedEffect(listener) {
+        when (listener) {
+            HomeListener.Idle -> {}
+            HomeListener.ReleasedCreated -> {
+                getBudgets()
+                resetListener()
+            }
+
+            HomeListener.ReleasedDeleted -> {
+                getBudgets()
+                resetListener()
+            }
+
+            HomeListener.LoggedOut -> {
+                onClickLogout()
+                resetListener()
+            }
+        }
+    }
 
     LaunchedEffect(budgetCreated?.value) {
         if (budgetCreated?.value == true) {
@@ -125,9 +150,10 @@ fun HomeScreen(
                 },
                 scope = scope,
                 onSaveRelease = { release ->
+                    onSaveRelease(release, state.currentBudget)
                     showBottomSheet = false
-                    onSaveRelease(release)
-                }
+                },
+                monthBudget = (state as HomeState.Success).selectedMonth.ordinal + 1,
             )
         }
         Column(
@@ -152,23 +178,27 @@ fun HomeScreen(
                                 color = gray700,
                                 shape = CircleShape
                             )
+                            .background(gray700)
+                            .align(Alignment.CenterVertically)
                     ) {
                         Image(
-                            painter = painterResource(R.drawable.ic_launcher_background),
-                            contentDescription = "User Image"
+                            painter = painterResource(R.drawable.ic_person),
+                            contentDescription = "User Image",
+                            modifier = Modifier.align(Alignment.Center),
+                            colorFilter = ColorFilter.tint(magenta)
                         )
                     }
                     Spacer(Modifier.width(12.dp))
                     Column {
                         Text(
-                            "OLÁ, ${state.user!!.name}!",
+                            "Hello, ${state.user!!.name}!",
                             style = appTypography.titleSm.copy(
                                 color = gray700
                             )
                         )
                         Spacer(Modifier.height(4.dp))
                         Text(
-                            "Vamos organizar suas finanças?",
+                            "Let's organize your finances?",
                             style = appTypography.textSm.copy(
                                 color = gray500
                             )
@@ -288,7 +318,7 @@ fun HomeScreen(
                                 }
                                 Spacer(Modifier.height(32.dp))
                                 Text(
-                                    "Orçamento disponível",
+                                    "Budget available",
                                     style = appTypography.textSm,
                                     color = gray400
                                 )
@@ -307,16 +337,14 @@ fun HomeScreen(
                                         )
                                     ) {
                                         Text(
-                                            "Definir orçamento",
+                                            "Set budget",
                                             style = appTypography.buttonSm,
                                             color = magenta,
                                         )
                                     }
                                 } else {
                                     Text(
-                                        "\$ ${
-                                            state.currentBudget.getAvailableBudget().toCurrencyUSD()
-                                        }",
+                                        "\$ ${state.currentBudget.getAvailableBudget()}",
                                         style = appTypography.titleLg,
                                         color = gray100
                                     )
@@ -328,7 +356,7 @@ fun HomeScreen(
                                 ) {
                                     Column {
                                         Text(
-                                            "Usado",
+                                            "Used",
                                             style = appTypography.textXs,
                                             color = gray400
                                         )
@@ -344,7 +372,7 @@ fun HomeScreen(
                                     }
                                     Column {
                                         Text(
-                                            "Limite",
+                                            "Limit",
                                             style = appTypography.textXs,
                                             color = gray400
                                         )
@@ -385,7 +413,7 @@ fun HomeScreen(
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Text(
-                                        "LANÇAMENTOS",
+                                        "RELEASES",
                                         style = appTypography.title2Xs,
                                         color = gray500,
 
@@ -422,7 +450,7 @@ fun HomeScreen(
                                             )
                                             Spacer(modifier = Modifier.width(20.dp))
                                             Text(
-                                                "Você ainda não registrou despesas ou receitas neste mês",
+                                                "You have not yet recorded expenses or income this month",
                                                 style = appTypography.textXs,
                                                 color = gray400
                                             )
@@ -455,7 +483,7 @@ fun HomeScreen(
                                                             )
                                                     ) {
                                                         Image(
-                                                            painter = painterResource(R.drawable.ic_arrow_left),
+                                                            painter = painterResource(R.drawable.ic_money),
                                                             contentDescription = "Release Icon",
                                                             modifier = Modifier
                                                                 .padding(8.dp)
@@ -492,7 +520,7 @@ fun HomeScreen(
                                                         color = gray700
                                                     )
                                                     Spacer(modifier = Modifier.width(2.dp))
-                                                    if (release.isPositive) {
+                                                    if (release.positive) {
                                                         Image(
                                                             painter = painterResource(R.drawable.ic_arrow_up),
                                                             colorFilter = ColorFilter.tint(green),
@@ -500,7 +528,7 @@ fun HomeScreen(
                                                             contentDescription = ""
                                                         )
                                                     }
-                                                    if (!release.isPositive) {
+                                                    if (!release.positive) {
                                                         Image(
                                                             painter = painterResource(R.drawable.ic_arrow_down),
                                                             colorFilter = ColorFilter.tint(red),
@@ -513,7 +541,11 @@ fun HomeScreen(
                                                     Image(
                                                         painter = painterResource(R.drawable.ic_delete),
                                                         colorFilter = ColorFilter.tint(magenta),
-                                                        modifier = Modifier.size(16.dp),
+                                                        modifier = Modifier
+                                                            .size(16.dp)
+                                                            .clickable {
+                                                                onDeleteRelease(release)
+                                                            },
                                                         contentDescription = "Delete release"
                                                     )
                                                 }
@@ -521,7 +553,10 @@ fun HomeScreen(
                                             if (i < state.currentBudget.releases.size - 1)
                                                 HorizontalDivider(
                                                     color = gray300,
-                                                    modifier = Modifier.padding(top = 12.dp)
+                                                    modifier = Modifier.padding(
+                                                        top = 12.dp,
+                                                        bottom = 12.dp
+                                                    )
                                                 )
                                         }
                                     }
@@ -540,6 +575,7 @@ fun HomeScreen(
 @Composable
 private fun HomeScreenPreview() {
     HomeScreen(
+        listener = HomeListener.Idle,
         state = HomeState.Success(
             user = UserModel(
                 uid = "",
@@ -554,9 +590,8 @@ private fun HomeScreenPreview() {
                 limit = "",
                 releases = listOf(
                     ReleaseModel(
-                        category = "",
                         date = "08/07/2025",
-                        isPositive = false,
+                        positive = false,
                         value = "450,67",
                         title = "Mercado"
                     )
@@ -569,11 +604,16 @@ private fun HomeScreenPreview() {
         onChangeMonth = {},
         onLeftChangeMonth = {},
         onRightChangeMonth = {},
-        onSaveRelease = {},
+        onSaveRelease = { _, _ -> },
+        onDeleteRelease = { _ -> },
         onClickNewBudget = {},
         getBudgets = {},
         onCleanKeyBudgetCreated = {},
-        budgetCreated = remember { mutableStateOf(false) }
+        budgetCreated = remember { mutableStateOf(false) },
+        resetListener = {
+
+        },
+        onClickLogout = {}
     )
 }
 
@@ -581,6 +621,7 @@ private fun HomeScreenPreview() {
 @Composable
 private fun HomeScreenEmptyReleasesPreview() {
     HomeScreen(
+        listener = HomeListener.Idle,
         state = HomeState.Success(
             user = UserModel(
                 uid = "",
@@ -600,10 +641,13 @@ private fun HomeScreenEmptyReleasesPreview() {
         onChangeMonth = {},
         onLeftChangeMonth = {},
         onRightChangeMonth = {},
-        onSaveRelease = {},
+        onSaveRelease = { _, _ -> },
+        onDeleteRelease = { _ -> },
         onClickNewBudget = {},
         getBudgets = {},
         onCleanKeyBudgetCreated = {},
-        budgetCreated = remember { mutableStateOf(false) }
+        budgetCreated = remember { mutableStateOf(false) },
+        resetListener = {},
+        onClickLogout = {}
     )
 }

@@ -1,5 +1,6 @@
 package com.iagoaf.appfinancas.core.utils
 
-object FirebaseCollectionsKeys {
+object FirebaseKeys {
     val budgets: String = "budgets"
+    val items: String = "items"
 }

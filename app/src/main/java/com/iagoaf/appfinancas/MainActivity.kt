@@ -109,14 +109,20 @@ fun AppNavHost(
         composable(AppRoutes.HOME) {
             val viewModel: HomeViewModel = hiltViewModel()
             val state = viewModel.state.collectAsState().value
+            val listener = viewModel.listener.collectAsState().value
             val budgetCreated = navController.currentBackStackEntry
                 ?.savedStateHandle
                 ?.getLiveData<Boolean>("budget_created")
                 ?.observeAsState(initial = false)
             HomeScreen(
                 state,
+                listener = listener,
+                onClickLogout = {
+
+                },
                 onLogout = {
                     authViewModel.logout()
+                    viewModel.logout()
                 },
                 onChangeMonth = { month ->
                     viewModel.changeMonth(month)
@@ -127,8 +133,11 @@ fun AppNavHost(
                 onRightChangeMonth = {
                     viewModel.onRightChangeMonth()
                 },
-                onSaveRelease = { release ->
-                    viewModel.addRelease(release)
+                onSaveRelease = { release, budget ->
+                    viewModel.addRelease(release, budget)
+                },
+                onDeleteRelease = { release ->
+                    viewModel.deleteRelease(release)
                 },
                 onClickNewBudget = {
                     val month = (state as HomeState.Success).selectedMonth
@@ -138,8 +147,9 @@ fun AppNavHost(
                     viewModel.getBudgets()
                 },
                 budgetCreated = budgetCreated,
-                onCleanKeyBudgetCreated = {
-
+                onCleanKeyBudgetCreated = {},
+                resetListener = {
+                    viewModel.resetListener()
                 }
             )
         }
@@ -162,8 +172,8 @@ fun AppNavHost(
                     viewModel.createBudget(limitBudget)
 
                 },
-                onDeleteBudget = { budgetId ->
-
+                onDeleteBudget = { budget ->
+                    viewModel.deleteBudget(budget)
                 },
                 onBackBudgetCreated = {
                     navController.previousBackStackEntry

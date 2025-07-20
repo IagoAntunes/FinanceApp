@@ -83,6 +83,9 @@ fun MonthlyBudgetScreen(
             }
 
             MonthlyBudgetListener.Idle -> {}
+            MonthlyBudgetListener.BudgetDeleted -> {
+
+            }
         }
     }
 
@@ -121,12 +124,12 @@ fun MonthlyBudgetScreen(
                             )
                             Column {
                                 Text(
-                                    "ORÇAMENTOS MENSAIS",
+                                    "MONTHLY BUDGETS",
                                     style = appTypography.titleSm,
                                     color = gray700
                                 )
                                 Text(
-                                    "Organize seus limites de gastos por mês",
+                                    "Organize your monthly spending limits",
                                     style = appTypography.textSm,
                                     color = gray500
                                 )
@@ -149,7 +152,7 @@ fun MonthlyBudgetScreen(
                         ) {
                             Column {
                                 Text(
-                                    "NOVO ORÇAMENTO",
+                                    "NEW BUDGET",
                                     style = appTypography.title2Xs,
                                     color = gray500
                                 )
@@ -212,7 +215,7 @@ fun MonthlyBudgetScreen(
                                     )
                                 ) {
                                     Text(
-                                        "Adicionar",
+                                        "Add",
                                         style = appTypography.buttonMd,
                                         color = gray100
                                     )
@@ -228,7 +231,7 @@ fun MonthlyBudgetScreen(
                         ) {
                             Column {
                                 Text(
-                                    "ORÇAMENTOS CADASTRADOS",
+                                    "REGISTERED BUDGETS",
                                     style = appTypography.title2Xs,
                                     color = gray500
                                 )
@@ -263,7 +266,7 @@ fun MonthlyBudgetScreen(
                                                 Text(
                                                     LocalDate.parse(
                                                         budget.date,
-                                                        DateTimeFormatter.ofPattern("dd/MM/yyyy")
+                                                        DateTimeFormatter.ofPattern("MM/dd/yyyy")
                                                     ).month.name,
                                                     style = TextStyle(
                                                         fontSize = 14.sp,

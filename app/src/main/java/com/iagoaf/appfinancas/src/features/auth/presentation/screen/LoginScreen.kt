@@ -45,7 +45,6 @@ import com.iagoaf.appfinancas.src.features.auth.presentation.state.LoginState
 
 @Composable
 fun LoginScreen(
-    modifier: Modifier = Modifier,
     onLogin: (String, String) -> Unit,
     onNavigateToRegister: () -> Unit,
     state: LoginState,
@@ -87,12 +86,12 @@ fun LoginScreen(
             )
             Spacer(modifier = Modifier.height(40.dp))
             Text(
-                "BOAS VINDAS!",
+                "WELCOME!",
                 style = appTypography.titleSm,
                 color = gray700,
             )
             Text(
-                "Pronto para organizar suas finanças? Acesse agora",
+                "Ready to organize your finances? Access now",
                 style = appTypography.textSm,
                 color = gray500,
             )
@@ -165,7 +164,7 @@ fun LoginScreen(
                 )
             ) {
                 Text(
-                    "Registrar",
+                    "Register",
                     style = appTypography.buttonMd,
                     color = magenta,
                 )
@@ -193,7 +192,7 @@ fun LoginScreen(
                     CircularProgressIndicator()
                 } else {
                     Text(
-                        "Entrar",
+                        "Login",
                         style = appTypography.buttonMd,
                         color = gray100,
                     )

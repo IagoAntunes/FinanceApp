@@ -6,4 +6,7 @@ sealed class MonthlyBudgetListener {
 
     object BudgetCreated :
         MonthlyBudgetListener()
+
+    object BudgetDeleted :
+        MonthlyBudgetListener()
 }

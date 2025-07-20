@@ -10,7 +10,7 @@
 
 ---
 
-<img width="1080" height="758" alt="Cover (9)" src="https://github.com/user-attachments/assets/57054f5b-8d3b-48e2-9853-af2bdc2dc9a5" />
+<img width="1080" height="758" alt="Cover" src="https://github.com/user-attachments/assets/57054f5b-8d3b-48e2-9853-af2bdc2dc9a5" />
 
 
 ## 🇺🇸 English

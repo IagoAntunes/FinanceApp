@@ -4,8 +4,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.iagoaf.appfinancas.services.database.keyValue.PreferencesManager
 import com.iagoaf.appfinancas.src.features.auth.domain.repository.IAuthRepository
-import com.iagoaf.appfinancas.src.features.home.presentation.listener.HomeListener
-import com.iagoaf.appfinancas.src.features.home.presentation.state.HomeState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
